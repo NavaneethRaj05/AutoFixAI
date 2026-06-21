@@ -6,7 +6,7 @@ export async function seedDemoData() {
     await Review.deleteMany({ repo: /teamvortex/i });
 
     // Check if we already have the rebranded reviews
-    const hasRebranded = await Review.findOne({ repo: 'prismflow/core' });
+    const hasRebranded = await Review.findOne({ repo: 'autofixai/core' });
     if (hasRebranded) {
       console.log('  Database seeder: rebranded reviews found, skipping seed.');
       return;
@@ -22,7 +22,7 @@ export async function seedDemoData() {
 
     const mockReviews = [
       {
-        repo: 'prismflow/core',
+        repo: 'autofixai/core',
         prNumber: 104,
         prTitle: 'auth: add OAuth2 login and cookie storage',
         headSha: 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0',
@@ -58,7 +58,7 @@ export async function seedDemoData() {
         updatedAt: new Date(now - 5 * oneDay)
       },
       {
-        repo: 'prismflow/core',
+        repo: 'autofixai/core',
         prNumber: 108,
         prTitle: 'perf: refactor DB querying using index hints',
         headSha: 'f1e2d3c4b5a69878a9b0c1d2e3f4a5b6c7d8e9f0',
@@ -109,7 +109,7 @@ export async function seedDemoData() {
         updatedAt: new Date(now - 1 * oneDay)
       },
       {
-        repo: 'prismflow/core',
+        repo: 'autofixai/core',
         prNumber: 110,
         prTitle: 'feature: add PR summary generator on webhooks',
         headSha: '2468101214161820222426283032343638404244',

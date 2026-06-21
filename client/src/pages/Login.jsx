@@ -69,8 +69,8 @@ export default function Login() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500 to-purple-600 shadow-glow mb-4">
             <span className="text-3xl">💎</span>
           </div>
-          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-white via-brand-200 to-purple-400 bg-clip-text text-transparent">PrismFlow</h1>
-          <p className="text-slate-400 text-xs mt-2 italic px-4 leading-relaxed font-medium">"Break every pull request into its true colors."</p>
+          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-white via-brand-200 to-purple-400 bg-clip-text text-transparent">AutoFixAI</h1>
+          <p className="text-slate-400 text-xs mt-2 italic px-4 leading-relaxed font-medium"></p>
         </div>
 
         {/* Form */}

@@ -60,13 +60,13 @@ function doSanitize(val) {
   if (val === null || val === undefined) return val;
   if (typeof val === 'string') {
     return val
-      .replace(/NavaneethRaj05\/PrismFlow/gi, 'prismflow/core')
+      .replace(/NavaneethRaj05\/PrismFlow/gi, 'autofixai/core')
       .replace(/NavaneethRaj05/gi, 'dev-user')
       .replace(/Navaneeth/gi, 'dev-user')
       .replace(/aksha/gi, 'anonymous-user')
-      .replace(/teamvortexnce\/prism/gi, 'prismflow/core')
-      .replace(/teamvortexnce/gi, 'prismflow-team')
-      .replace(/teamvortex/gi, 'prismflow-team');
+      .replace(/teamvortexnce\/prism/gi, 'autofixai/core')
+      .replace(/teamvortexnce/gi, 'autofixai-team')
+      .replace(/teamvortex/gi, 'autofixai-team');
   }
   if (Array.isArray(val)) {
     return val.map(doSanitize);

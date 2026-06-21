@@ -197,7 +197,7 @@ export default function Dashboard() {
   // Custom Repo Connector Form State
   const [customRepoUrl, setCustomRepoUrl] = useState('');
   const [customPrNumber, setCustomPrNumber] = useState('');
-  const [customPat, setCustomPat] = useState(() => localStorage.getItem('prism_pat') || '');
+  const [customPat, setCustomPat] = useState(() => localStorage.getItem('autofixai_pat') || '');
   const [triggerLoading, setTriggerLoading] = useState(false);
   const [triggerError, setTriggerError] = useState('');
   const [progressStep, setProgressStep] = useState(0);
@@ -246,7 +246,7 @@ export default function Dashboard() {
   const handlePatChange = (e) => {
     const val = e.target.value;
     setCustomPat(val);
-    localStorage.setItem('prism_pat', val);
+    localStorage.setItem('autofixai_pat', val);
   };
 
   const copyWebhookUrl = () => {
@@ -257,7 +257,7 @@ export default function Dashboard() {
   };
 
   const copyWebhookSecret = () => {
-    navigator.clipboard.writeText('prism-dev-secret-2024');
+    navigator.clipboard.writeText('autofixai-dev-secret-2024');
     setCopiedSecret(true);
     setTimeout(() => setCopiedSecret(false), 2000);
   };
@@ -324,7 +324,7 @@ export default function Dashboard() {
   }
 
   const webhookUrl = `${window.location.origin}/api/webhook/github`;
-  const webhookSecret = 'prism-dev-secret-2024';
+  const webhookSecret = 'autofixai-dev-secret-2024';
 
   return (
     <div className="min-h-screen animated-bg">
@@ -336,7 +336,7 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-2xl">💎</span>
-            <span className="font-bold text-white text-lg tracking-wider">PrismFlow</span>
+            <span className="font-bold text-white text-lg tracking-wider">AutoFixAI</span>
           </div>
           <div className="flex items-center gap-3">
             <Link to="/leaderboard" id="leaderboard-nav-btn" className="btn-ghost text-sm">
@@ -360,7 +360,7 @@ export default function Dashboard() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="page-title">Review Dashboard</h1>
-            <p className="text-slate-400 text-sm mt-1">PrismFlow — Break every pull request into its true colors</p>
+            <p className="text-slate-400 text-sm mt-1"></p>
           </div>
 
           {/* Tab Control */}
@@ -589,7 +589,7 @@ export default function Dashboard() {
                   🤖 Autonomous Codebase Agent
                 </h2>
                 <p className="text-slate-400 text-sm mt-2 leading-relaxed">
-                  Enter your repository URL below. PrismFlow will recursively scan your default branch, analyze the files for bugs or security issues with Groq AI, auto-commit fixes to a new patch branch, and open a Pull Request on your GitHub repository.
+                  Enter your repository URL below. AutoFixAI will recursively scan your default branch, analyze the files for bugs or security issues with Groq AI, auto-commit fixes to a new patch branch, and open a Pull Request on your GitHub repository.
                 </p>
               </div>
 

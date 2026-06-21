@@ -183,7 +183,7 @@ export async function auditRepo(owner, repo, customToken) {
     }
 
     // 7. Commit changes and open PR if there are modifications
-    const branchName = `prismflow-patches-${Date.now()}`;
+    const branchName = `autofixai-patches-${Date.now()}`;
     console.log(`  Creating patch branch: ${branchName}...`);
 
     // Create the branch
@@ -201,7 +201,7 @@ export async function auditRepo(owner, repo, customToken) {
         owner,
         repo,
         path: mod.path,
-        message: `fix(prismflow): automated AI code corrections for ${mod.path}`,
+        message: `fix(autofixai): automated AI code corrections for ${mod.path}`,
         content: Buffer.from(mod.fixedContent).toString('base64'),
         sha: mod.sha,
         branch: branchName
@@ -210,10 +210,10 @@ export async function auditRepo(owner, repo, customToken) {
 
     // Create Pull Request
     console.log(`  Opening automated Pull Request on GitHub...`);
-    const prTitle = '💎 PrismFlow: Automated Codebase Audit & Bug Fixes';
-    const prBody = `## 💎 PrismFlow: Codebase Audit & Auto-Fixes
+    const prTitle = '💎 AutoFixAI: Automated Codebase Audit & Bug Fixes';
+    const prBody = `## 💎 AutoFixAI: Codebase Audit & Auto-Fixes
 
-PrismFlow's Autonomous AI Agent audited the repository's main branch and automatically identified security risks, bugs, or performance inefficiencies in the codebase.
+AutoFixAI's Autonomous AI Agent audited the repository's main branch and automatically identified security risks, bugs, or performance inefficiencies in the codebase.
 
 ### 🛠️ What was fixed:
 ${modifiedFiles.map(m => `- **${m.path}**: Corrected code vulnerabilities and quality issues.`).join('\n')}
@@ -237,7 +237,7 @@ Please review these changes and merge them to resolve the detected issues!`;
     reviewDoc.comments = allComments;
     reviewDoc.verdict = 'REQUEST_CHANGES';
     reviewDoc.riskLevel = allComments.some(c => c.severity === 'security') ? 'high' : 'medium';
-    reviewDoc.summary = `PrismFlow scanned your main codebase and generated ${allComments.length} suggestions/fixes. Opened Pull Request #${pr.number} with automated commits.`;
+    reviewDoc.summary = `AutoFixAI scanned your main codebase and generated ${allComments.length} suggestions/fixes. Opened Pull Request #${pr.number} with automated commits.`;
     reviewDoc.status = 'completed';
     await reviewDoc.save();
 
