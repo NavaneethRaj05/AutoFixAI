@@ -204,6 +204,7 @@ export default function Dashboard() {
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [copiedSecret, setCopiedSecret] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
+  const [connectorTabMode, setConnectorTabMode] = useState('agent'); // 'agent' | 'pr' | 'webhook'
 
   const { reviews, stats, pagination, loading, error, setPage, refresh } = useReviews({
     repo:     repoFilter,
@@ -261,7 +262,15 @@ export default function Dashboard() {
     setTimeout(() => setCopiedSecret(false), 2000);
   };
 
-  const progressSteps = [
+  const progressSteps = connectorTabMode === 'agent' ? [
+    'Connecting to GitHub API & loading repository...',
+    'Scanning repository tree & reading source code...',
+    'Analyzing codebase health with Groq AI (Llama 3.3 70B)...',
+    'Creating patch branch on your repository...',
+    'Committing code corrections & automated bug fixes...',
+    'Opening an automated Pull Request on GitHub...',
+    'Finalizing audit dashboard entry...'
+  ] : [
     'Validating inputs & GitHub API connectivity...',
     'Downloading changed file diff patches...',
     'Analyzing code quality using Groq SDK (Llama 3.3 70B)...',
@@ -276,9 +285,11 @@ export default function Dashboard() {
     setTriggerLoading(true);
     setProgressStep(0);
 
+    const steps = connectorTabMode === 'agent' ? 7 : 6;
+
     const interval = setInterval(() => {
       setProgressStep((prev) => {
-        if (prev < progressSteps.length - 2) {
+        if (prev < steps - 2) {
           return prev + 1;
         }
         return prev;
@@ -286,14 +297,15 @@ export default function Dashboard() {
     }, 2000);
 
     try {
-      const res = await api.post('/reviews/run-custom', {
-        repoUrl: customRepoUrl,
-        prNumber: customPrNumber,
-        githubToken: customPat,
-      });
+      const endpoint = connectorTabMode === 'agent' ? '/reviews/audit-repo' : '/reviews/run-custom';
+      const payload = connectorTabMode === 'agent'
+        ? { repoUrl: customRepoUrl, githubToken: customPat }
+        : { repoUrl: customRepoUrl, prNumber: customPrNumber, githubToken: customPat };
+
+      const res = await api.post(endpoint, payload);
 
       clearInterval(interval);
-      setProgressStep(progressSteps.length - 1);
+      setProgressStep(steps - 1);
       setTimeout(() => {
         setTriggerLoading(false);
         refresh();
@@ -302,7 +314,7 @@ export default function Dashboard() {
     } catch (err) {
       clearInterval(interval);
       setTriggerLoading(false);
-      setTriggerError(err.response?.data?.error || 'Review execution failed. Please verify repo accessibility and token permission.');
+      setTriggerError(err.response?.data?.error || 'Execution failed. Please verify repo accessibility and token permissions.');
     }
   }
 
@@ -567,191 +579,289 @@ export default function Dashboard() {
         ) : (
           /* Connect Repository Tab Content */
           <div className="grid lg:grid-cols-2 gap-8 items-start animate-fade-in">
-            {/* Left Column: Webhook Setup */}
-            <div
-              onMouseMove={handleMouseMove}
-              onMouseLeave={handleMouseLeave}
-              className="glass tilt-card rounded-2xl p-6 space-y-6"
-            >
-              <div>
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  ⚙️ Webhook Setup Guide
-                </h2>
-                <p className="text-slate-400 text-sm mt-1">Configure GitHub to trigger PrismFlow on every Pull Request update.</p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Payload URL</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      readOnly
-                      value={webhookUrl}
-                      className="input py-2 text-sm bg-black/30 font-mono text-slate-300 flex-1 select-all"
-                    />
-                    <button
-                      onClick={copyWebhookUrl}
-                      className="px-4 py-2 bg-brand-500/20 border border-brand-500/30 rounded-xl text-xs font-bold text-brand-300 hover:bg-brand-500 hover:text-white transition-all active:scale-95"
-                    >
-                      {copiedUrl ? 'Copied! ✓' : 'Copy'}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                    <span>Secret Key</span>
-                    <button
-                      type="button"
-                      onClick={() => setShowSecret(!showSecret)}
-                      className="text-[10px] text-brand-400 hover:text-brand-300 transition-all font-semibold lowercase"
-                    >
-                      {showSecret ? 'hide' : 'show'}
-                    </button>
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type={showSecret ? 'text' : 'password'}
-                      readOnly
-                      value={webhookSecret}
-                      className="input py-2 text-sm bg-black/30 font-mono text-slate-300 flex-1 select-all"
-                    />
-                    <button
-                      onClick={copyWebhookSecret}
-                      className="px-4 py-2 bg-brand-500/20 border border-brand-500/30 rounded-xl text-xs font-bold text-brand-300 hover:bg-brand-500 hover:text-white transition-all active:scale-95"
-                    >
-                      {copiedSecret ? 'Copied! ✓' : 'Copy'}
-                    </button>
-                  </div>
+            {/* Left Column: Connection Modes */}
+            <div className="space-y-6">
+              <div
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
+                className="glass tilt-card rounded-2xl p-6 space-y-4"
+              >
+                <div>
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    🔌 Integration Mode
+                  </h2>
+                  <p className="text-slate-400 text-sm mt-1">Choose how you want to connect PrismFlow to your codebase.</p>
                 </div>
 
                 <div className="space-y-3 pt-2">
-                  <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Quick Config Checklist:</h3>
-                  <ul className="space-y-2 text-sm text-slate-400">
-                    <li className="flex items-start gap-2">
-                      <span className="text-brand-400 mt-0.5">✔</span>
-                      <span>Set <strong>Content type</strong> to <code>application/json</code>.</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-brand-400 mt-0.5">✔</span>
-                      <span>Under events, select <strong>Let me select individual events</strong> and check only <strong>Pull requests</strong>.</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-brand-400 mt-0.5">✔</span>
-                      <span>Check <strong>Active</strong> and click <strong>Add webhook</strong>.</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column: Trigger Instant Review */}
-            <div
-              onMouseMove={handleMouseMove}
-              onMouseLeave={handleMouseLeave}
-              className="glass tilt-card rounded-2xl p-6 space-y-6"
-            >
-              <div>
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  🚀 Trigger Instant AI Review
-                </h2>
-                <p className="text-slate-400 text-sm mt-1">Run PrismFlow immediately on any public or private Pull Request.</p>
-              </div>
-
-              {triggerError && (
-                <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
-                  {triggerError}
-                </div>
-              )}
-
-              {triggerLoading ? (
-                <div className="space-y-4 py-4">
-                  <div className="flex flex-col items-center justify-center space-y-3">
-                    <div className="relative w-16 h-16">
-                      <div className="absolute inset-0 rounded-full border-4 border-brand-500/10" />
-                      <div className="absolute inset-0 rounded-full border-4 border-t-brand-500 border-r-purple-500 animate-spin" />
-                    </div>
-                    <p className="text-sm text-slate-300 font-semibold mt-2">Running AI Review Pipeline...</p>
-                  </div>
-
-                  <div className="space-y-2 border-t border-white/5 pt-4 max-w-sm mx-auto">
-                    {progressSteps.map((step, idx) => {
-                      const isCompleted = progressStep > idx;
-                      const isActive = progressStep === idx;
-                      return (
-                        <div key={idx} className="flex items-start gap-3 text-xs">
-                          <span className={`font-bold ${isCompleted ? 'text-green-400' : isActive ? 'text-brand-400' : 'text-slate-600'}`}>
-                            {isCompleted ? '✓' : isActive ? '●' : '○'}
-                          </span>
-                          <span className={isCompleted ? 'text-slate-400 line-through' : isActive ? 'text-white font-semibold' : 'text-slate-500'}>
-                            {step}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <form onSubmit={handleTriggerReview} className="space-y-4">
-                  <div>
-                    <label htmlFor="repoUrl" className="block text-sm font-medium text-slate-300 mb-1.5">
-                      Repository URL or owner/repo
-                    </label>
-                    <input
-                      id="repoUrl"
-                      type="text"
-                      required
-                      placeholder="https://github.com/facebook/react or facebook/react"
-                      value={customRepoUrl}
-                      onChange={(e) => setCustomRepoUrl(e.target.value)}
-                      className="input text-sm"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="prNumber" className="block text-sm font-medium text-slate-300 mb-1.5">
-                      Pull Request Number
-                    </label>
-                    <input
-                      id="prNumber"
-                      type="number"
-                      required
-                      placeholder="e.g. 24"
-                      value={customPrNumber}
-                      onChange={(e) => setCustomPrNumber(e.target.value)}
-                      className="input text-sm"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="customPat" className="block text-sm font-medium text-slate-300 mb-1.5 flex items-center justify-between">
-                      <span>GitHub Personal Access Token (PAT)</span>
-                      <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Optional</span>
-                    </label>
-                    <input
-                      id="customPat"
-                      type="password"
-                      placeholder="ghp_..."
-                      value={customPat}
-                      onChange={handlePatChange}
-                      className="input text-sm font-mono"
-                    />
-                    <p className="text-[10px] text-slate-500 mt-1.5 leading-relaxed">
-                      * Required for private repositories. Stored strictly in your local browser session and never sent to our database.
-                    </p>
-                  </div>
-
+                  {/* Mode 1: Autonomous Agent */}
                   <button
-                    type="submit"
-                    disabled={triggerLoading}
-                    className="btn-primary w-full justify-center mt-6 text-sm font-bold bg-gradient-to-r from-brand-500 via-brand-600 to-purple-600 hover:from-brand-400 hover:to-purple-500 shadow-glow animate-pulse hover:animate-none"
+                    type="button"
+                    onClick={() => {
+                      setConnectorTabMode('agent');
+                      setTriggerError('');
+                    }}
+                    className={`w-full text-left p-4 rounded-xl border transition-all duration-200 ${
+                      connectorTabMode === 'agent'
+                        ? 'bg-brand-500/10 border-brand-500/50 shadow-glow'
+                        : 'bg-white/5 border-white/10 hover:bg-white/10'
+                    }`}
                   >
-                    🚀 Connect & Trigger AI Review
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-lg">🤖</span>
+                      <h3 className="text-sm font-semibold text-white">Autonomous Codebase Agent</h3>
+                    </div>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      Scan default branch, find security risks or bugs, auto-commit code corrections, and open a PR on GitHub.
+                    </p>
                   </button>
-                </form>
-              )}
+
+                  {/* Mode 2: Trigger PR Review */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConnectorTabMode('pr');
+                      setTriggerError('');
+                    }}
+                    className={`w-full text-left p-4 rounded-xl border transition-all duration-200 ${
+                      connectorTabMode === 'pr'
+                        ? 'bg-brand-500/10 border-brand-500/50 shadow-glow'
+                        : 'bg-white/5 border-white/10 hover:bg-white/10'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-lg">🔍</span>
+                      <h3 className="text-sm font-semibold text-white">Pull Request Reviewer</h3>
+                    </div>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      Analyze a specific open Pull Request on-demand. Posts inline comments and a summary review directly to GitHub.
+                    </p>
+                  </button>
+
+                  {/* Mode 3: CI/CD Webhook */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConnectorTabMode('webhook');
+                      setTriggerError('');
+                    }}
+                    className={`w-full text-left p-4 rounded-xl border transition-all duration-200 ${
+                      connectorTabMode === 'webhook'
+                        ? 'bg-brand-500/10 border-brand-500/50 shadow-glow'
+                        : 'bg-white/5 border-white/10 hover:bg-white/10'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-lg">⚙️</span>
+                      <h3 className="text-sm font-semibold text-white">CI/CD Webhook Integration</h3>
+                    </div>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      Configure automatic triggers on GitHub to run PrismFlow reviews on every pull request push or update.
+                    </p>
+                  </button>
+                </div>
+              </div>
             </div>
+
+            {/* Right Column: Terminal form / Webhook guide */}
+            {connectorTabMode === 'webhook' ? (
+              <div
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
+                className="glass tilt-card rounded-2xl p-6 space-y-6"
+              >
+                <div>
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    ⚙️ Webhook Setup Guide
+                  </h2>
+                  <p className="text-slate-400 text-sm mt-1">Configure GitHub to trigger PrismFlow on every Pull Request update.</p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Payload URL</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={webhookUrl}
+                        className="input py-2 text-sm bg-black/30 font-mono text-slate-300 flex-1 select-all"
+                      />
+                      <button
+                        onClick={copyWebhookUrl}
+                        className="px-4 py-2 bg-brand-500/20 border border-brand-500/30 rounded-xl text-xs font-bold text-brand-300 hover:bg-brand-500 hover:text-white transition-all active:scale-95"
+                      >
+                        {copiedUrl ? 'Copied! ✓' : 'Copy'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                      <span>Secret Key</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowSecret(!showSecret)}
+                        className="text-[10px] text-brand-400 hover:text-brand-300 transition-all font-semibold lowercase"
+                      >
+                        {showSecret ? 'hide' : 'show'}
+                      </button>
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type={showSecret ? 'text' : 'password'}
+                        readOnly
+                        value={webhookSecret}
+                        className="input py-2 text-sm bg-black/30 font-mono text-slate-300 flex-1 select-all"
+                      />
+                      <button
+                        onClick={copyWebhookSecret}
+                        className="px-4 py-2 bg-brand-500/20 border border-brand-500/30 rounded-xl text-xs font-bold text-brand-300 hover:bg-brand-500 hover:text-white transition-all active:scale-95"
+                      >
+                        {copiedSecret ? 'Copied! ✓' : 'Copy'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 pt-2">
+                    <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Quick Config Checklist:</h3>
+                    <ul className="space-y-2 text-sm text-slate-400">
+                      <li className="flex items-start gap-2">
+                        <span className="text-brand-400 mt-0.5">✔</span>
+                        <span>Set <strong>Content type</strong> to <code>application/json</code>.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-brand-400 mt-0.5">✔</span>
+                        <span>Under events, select <strong>Let me select individual events</strong> and check only <strong>Pull requests</strong>.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-brand-400 mt-0.5">✔</span>
+                        <span>Check <strong>Active</strong> and click <strong>Add webhook</strong>.</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
+                className="glass tilt-card rounded-2xl p-6 space-y-6"
+              >
+                <div>
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    {connectorTabMode === 'agent' ? '🤖 Autonomous Codebase Agent' : '🚀 Trigger Instant AI Review'}
+                  </h2>
+                  <p className="text-slate-400 text-sm mt-1">
+                    {connectorTabMode === 'agent' 
+                      ? 'Find bugs/vulnerabilities, commit patches, and open a Pull Request automatically.'
+                      : 'Run PrismFlow immediately on any public or private Pull Request.'}
+                  </p>
+                </div>
+
+                {triggerError && (
+                  <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+                    {triggerError}
+                  </div>
+                )}
+
+                {triggerLoading ? (
+                  <div className="space-y-4 py-4">
+                    <div className="flex flex-col items-center justify-center space-y-3">
+                      <div className="relative w-16 h-16">
+                        <div className="absolute inset-0 rounded-full border-4 border-brand-500/10" />
+                        <div className="absolute inset-0 rounded-full border-4 border-t-brand-500 border-r-purple-500 animate-spin" />
+                      </div>
+                      <p className="text-sm text-slate-300 font-semibold mt-2">
+                        {connectorTabMode === 'agent' ? 'Running Autonomous Agent...' : 'Running AI Review Pipeline...'}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2 border-t border-white/5 pt-4 max-w-sm mx-auto">
+                      {progressSteps.map((step, idx) => {
+                        const isCompleted = progressStep > idx;
+                        const isActive = progressStep === idx;
+                        return (
+                          <div key={idx} className="flex items-start gap-3 text-xs">
+                            <span className={`font-bold ${isCompleted ? 'text-green-400' : isActive ? 'text-brand-400' : 'text-slate-600'}`}>
+                              {isCompleted ? '✓' : isActive ? '●' : '○'}
+                            </span>
+                            <span className={isCompleted ? 'text-slate-400 line-through' : isActive ? 'text-white font-semibold' : 'text-slate-500'}>
+                              {step}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <form onSubmit={handleTriggerReview} className="space-y-4">
+                    <div>
+                      <label htmlFor="repoUrl" className="block text-sm font-medium text-slate-300 mb-1.5">
+                        Repository URL or owner/repo
+                      </label>
+                      <input
+                        id="repoUrl"
+                        type="text"
+                        required
+                        placeholder="https://github.com/facebook/react or facebook/react"
+                        value={customRepoUrl}
+                        onChange={(e) => setCustomRepoUrl(e.target.value)}
+                        className="input text-sm"
+                      />
+                    </div>
+
+                    {connectorTabMode === 'pr' && (
+                      <div>
+                        <label htmlFor="prNumber" className="block text-sm font-medium text-slate-300 mb-1.5">
+                          Pull Request Number
+                        </label>
+                        <input
+                          id="prNumber"
+                          type="number"
+                          required
+                          placeholder="e.g. 24"
+                          value={customPrNumber}
+                          onChange={(e) => setCustomPrNumber(e.target.value)}
+                          className="input text-sm"
+                        />
+                      </div>
+                    )}
+
+                    <div>
+                      <label htmlFor="customPat" className="block text-sm font-medium text-slate-300 mb-1.5 flex items-center justify-between">
+                        <span>GitHub Personal Access Token (PAT)</span>
+                        <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">
+                          {connectorTabMode === 'agent' ? 'Required' : 'Optional'}
+                        </span>
+                      </label>
+                      <input
+                        id="customPat"
+                        type="password"
+                        required={connectorTabMode === 'agent'}
+                        placeholder="ghp_..."
+                        value={customPat}
+                        onChange={handlePatChange}
+                        className="input text-sm font-mono"
+                      />
+                      <p className="text-[10px] text-slate-500 mt-1.5 leading-relaxed">
+                        {connectorTabMode === 'agent'
+                          ? '* Requires repo permissions to create branches, push code fixes, and open a Pull Request.'
+                          : '* Required for private repositories. Stored strictly in your local browser session and never sent to our database.'}
+                      </p>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={triggerLoading}
+                      className="btn-primary w-full justify-center mt-6 text-sm font-bold bg-gradient-to-r from-brand-500 via-brand-600 to-purple-600 hover:from-brand-400 hover:to-purple-500 shadow-glow animate-pulse hover:animate-none"
+                    >
+                      {connectorTabMode === 'agent' ? '🤖 Run Codebase Audit & Auto-Fix' : '🚀 Trigger Instant AI Review'}
+                    </button>
+                  </form>
+                )}
+              </div>
+            )}
           </div>
         )}
       </main>

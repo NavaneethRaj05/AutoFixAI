@@ -2,6 +2,7 @@ import { Router } from 'express';
 import Review         from '../models/Review.js';
 import authMiddleware from '../middleware/authMiddleware.js';
 import { reviewPR }   from '../services/aiReview.js';
+import { auditRepo }  from '../services/repoAudit.js';
 import Groq           from 'groq-sdk';
 
 const router = Router();
@@ -352,6 +353,49 @@ router.post('/run-custom', async (req, res) => {
   } catch (err) {
     console.error('POST /api/reviews/run-custom error:', err.message);
     res.status(500).json({ success: false, error: err.message || 'Failed to execute custom review' });
+  }
+});
+
+/**
+ * POST /api/reviews/audit-repo
+ * Runs an autonomous audit on a codebase's main branch, auto-commits bug fixes, and creates a PR on GitHub.
+ */
+router.post('/audit-repo', async (req, res) => {
+  try {
+    const { repoUrl, githubToken } = req.body;
+
+    if (!repoUrl) {
+      return res.status(400).json({ success: false, error: 'Repository URL is required.' });
+    }
+
+    if (!githubToken) {
+      return res.status(400).json({ success: false, error: 'A valid GitHub Personal Access Token (PAT) with write access is required to run the Autonomous Agent.' });
+    }
+
+    // Parse repoUrl: e.g. "https://github.com/owner/repo" or "owner/repo"
+    let cleanRepo = repoUrl.trim();
+    if (cleanRepo.startsWith('http://') || cleanRepo.startsWith('https://')) {
+      const parts = cleanRepo.split('github.com/');
+      if (parts.length > 1) {
+        cleanRepo = parts[1];
+      }
+    }
+    cleanRepo = cleanRepo.split('/pull/')[0];
+    cleanRepo = cleanRepo.replace(/\/$/, '');
+
+    const [owner, repo] = cleanRepo.split('/');
+    if (!owner || !repo) {
+      return res.status(400).json({ success: false, error: 'Invalid repository format. Use owner/repo or a full GitHub URL.' });
+    }
+
+    console.log(`🚀 Autonomous codebase audit requested for ${owner}/${repo}`);
+
+    const result = await auditRepo(owner, repo, githubToken.trim());
+    res.json({ success: true, data: result });
+
+  } catch (err) {
+    console.error('POST /api/reviews/audit-repo error:', err.message);
+    res.status(500).json({ success: false, error: err.message || 'Failed to execute codebase audit agent loop' });
   }
 });
 
