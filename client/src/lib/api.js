@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: new URL(import.meta.env.VITE_API_URL || '/api', window.location.origin).href,
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
 });
@@ -10,7 +10,12 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    // Add token validation check
+    if (isValidToken(token)) {
+      config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      localStorage.removeItem('token');
+    }
   }
   return config;
 });
@@ -22,9 +27,24 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       window.location.href = '/login';
+    } else if (error.response?.status === 500) {
+      // Handle server error
+      console.error('Server error:', error);
+    } else if (error.request) {
+      // Handle network error
+      console.error('Network error:', error);
+    } else {
+      // Handle other errors
+      console.error('Unknown error:', error);
     }
     return Promise.reject(error);
   }
 );
+
+function isValidToken(token) {
+  // Implement token validation logic here
+  // For example, check if the token is expired or if it's a valid JWT
+  return true; // Replace with actual validation logic
+}
 
 export default api;

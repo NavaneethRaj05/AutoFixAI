@@ -4,9 +4,18 @@ import Dashboard    from './pages/Dashboard.jsx';
 import ReviewDetail from './pages/ReviewDetail.jsx';
 import Leaderboard  from './pages/Leaderboard.jsx';
 
+function getToken() {
+  return localStorage.getItem('token');
+}
+
+function validateToken(token) {
+  // Add token validation logic here
+  return token !== null && token !== undefined;
+}
+
 function ProtectedRoute({ children }) {
-  const token = localStorage.getItem('token');
-  if (!token) return <Navigate to="/login" replace />;
+  const token = getToken();
+  if (!validateToken(token)) return <Navigate to="/login" replace />;
   return children;
 }
 
@@ -43,8 +52,8 @@ export default function App() {
           }
         />
 
-        {/* Catch-all → dashboard */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Catch-all → 404 page */}
+        <Route path="*" element={<div>404 Page Not Found</div>} />
       </Routes>
     </BrowserRouter>
   );
