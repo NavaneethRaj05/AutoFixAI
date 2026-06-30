@@ -32,7 +32,11 @@ export function useReviews(filters = {}) {
       setPagination(reviewsRes.data.data.pagination);
       setStats(statsRes.data.data);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to load reviews');
+      const errorData = err.response?.data?.error || err.response?.data;
+      const errorMsg = typeof errorData === 'object'
+        ? (errorData.message || errorData.error || JSON.stringify(errorData))
+        : (errorData || err.message || 'Failed to load reviews');
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }

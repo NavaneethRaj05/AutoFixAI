@@ -21,7 +21,11 @@ export default function ReviewDetail() {
         const res = await api.get(`/reviews/${id}`);
         setReview(res.data.data);
       } catch (err) {
-        setError(err.response?.data?.error || 'Failed to load review');
+        const errorData = err.response?.data?.error || err.response?.data;
+        const errorMsg = typeof errorData === 'object'
+          ? (errorData.message || errorData.error || JSON.stringify(errorData))
+          : (errorData || err.message || 'Failed to load review');
+        setError(errorMsg);
       } finally {
         setLoading(false);
       }

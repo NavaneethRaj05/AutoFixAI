@@ -19,7 +19,11 @@ export default function Login() {
       localStorage.setItem('token', res.data.data.token);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed — check your credentials');
+      const errorData = err.response?.data?.error || err.response?.data;
+      const errorMsg = typeof errorData === 'object'
+        ? (errorData.message || errorData.error || JSON.stringify(errorData))
+        : (errorData || err.message || 'Login failed — check your credentials');
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -34,7 +38,11 @@ export default function Login() {
       localStorage.setItem('token', res.data.data.token);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Demo login failed — please try again');
+      const errorData = err.response?.data?.error || err.response?.data;
+      const errorMsg = typeof errorData === 'object'
+        ? (errorData.message || errorData.error || JSON.stringify(errorData))
+        : (errorData || err.message || 'Demo login failed — please try again');
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }

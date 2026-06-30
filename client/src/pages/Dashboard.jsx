@@ -314,7 +314,11 @@ export default function Dashboard() {
     } catch (err) {
       clearInterval(interval);
       setTriggerLoading(false);
-      setTriggerError(err.response?.data?.error || 'Execution failed. Please verify repo accessibility and token permissions.');
+      const errorData = err.response?.data?.error || err.response?.data;
+      const errorMsg = typeof errorData === 'object'
+        ? (errorData.message || errorData.error || JSON.stringify(errorData))
+        : (errorData || err.message || 'Execution failed. Please verify repo accessibility and token permissions.');
+      setTriggerError(errorMsg);
     }
   }
 
