@@ -18,11 +18,14 @@ const REQUIRED_ENV = [
   'JWT_SECRET',
 ];
 
-for (const key of REQUIRED_ENV) {
-  if (!process.env[key]) {
-    throw new Error(`❌ Missing required env var: ${key}`);
+const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
+
+if (missingEnv.length > 0) {
+  console.error(`❌ Missing required env vars: ${missingEnv.join(', ')}`);
+} else {
+  for (const key of REQUIRED_ENV) {
+    console.log(`  ${key}: set ✓`);
   }
-  console.log(`  ${key}: ${process.env[key] ? 'set ✓' : 'MISSING ✗'}`);
 }
 
 // ── Routes ────────────────────────────────────────────────────────────────────
@@ -45,6 +48,18 @@ app.use('/api/webhook', express.raw({ type: 'application/json' }));
 
 // ── JSON body for all other routes ───────────────────────────────────────────
 app.use(express.json());
+
+// ── Block requests if environment configuration is invalid ───────────────────
+app.use((req, res, next) => {
+  if (req.path === '/health') return next();
+  if (missingEnv.length > 0) {
+    return res.status(500).json({
+      success: false,
+      error: `Server configuration error: Missing required environment variables: ${missingEnv.join(', ')}. Please configure these in your Vercel Project Settings.`
+    });
+  }
+  next();
+});
 
 // ── Sanitization Middleware (removes sensitive usernames, repos, and names) ──
 function sanitizeResponse(val) {
